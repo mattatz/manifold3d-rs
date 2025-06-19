@@ -6,7 +6,7 @@ use manifold3d_sys::{
     manifold_meshgl_num_prop, manifold_meshgl_num_tri, manifold_meshgl_num_vert,
     manifold_meshgl_run_index_length, manifold_meshgl_run_original_id_length,
     manifold_meshgl_run_transform_length, manifold_meshgl_tangent_length,
-    manifold_meshgl_tri_length, manifold_meshgl_vert_properties,
+    manifold_meshgl_tri_length, manifold_meshgl_tri_verts, manifold_meshgl_vert_properties,
     manifold_meshgl_vert_properties_length, manifold_smooth, ManifoldMeshGL,
 };
 use std::alloc::{alloc, Layout};
@@ -15,7 +15,7 @@ use std::os::raw::c_void;
 pub struct MeshGL(*mut ManifoldMeshGL);
 
 impl MeshGL {
-    pub(crate) fn from_ptr(ptr: *mut ManifoldMeshGL) -> MeshGL {
+    pub fn from_ptr(ptr: *mut ManifoldMeshGL) -> MeshGL {
         MeshGL(ptr)
     }
 
@@ -163,6 +163,16 @@ impl MeshGL {
         let layout = Layout::array::<f32>(element_count).unwrap();
         let array_start_ptr = unsafe { alloc(layout) } as *mut f32;
         unsafe { manifold_meshgl_vert_properties(array_start_ptr as *mut c_void, self.0) };
+
+        unsafe { Vec::from_raw_parts(array_start_ptr, element_count, element_count) }
+    }
+
+    /// Returns a copy of the original triangle vertex indices.
+    pub fn tri_verts(&self) -> Vec<u32> {
+        let element_count = self.vertex_index_count();
+        let layout = Layout::array::<u32>(element_count).unwrap();
+        let array_start_ptr = unsafe { alloc(layout) } as *mut u32;
+        unsafe { manifold_meshgl_tri_verts(array_start_ptr as *mut c_void, self.0) };
 
         unsafe { Vec::from_raw_parts(array_start_ptr, element_count, element_count) }
     }
