@@ -1,14 +1,17 @@
+type RawFillRule = manifold3d_sys::ManifoldFillRule;
+type RawError = manifold3d_sys::ManifoldError;
+
 #[non_exhaustive]
 pub enum FillRule {
     EvenOdd,
     NonZero,
     Positive,
     Negative,
-    Unknown(u32),
+    Unknown(RawFillRule),
 }
 
-impl From<u32> for FillRule {
-    fn from(value: u32) -> Self {
+impl From<RawFillRule> for FillRule {
+    fn from(value: RawFillRule) -> Self {
         match value {
             manifold3d_sys::ManifoldFillRule_MANIFOLD_FILL_RULE_EVEN_ODD => FillRule::EvenOdd,
             manifold3d_sys::ManifoldFillRule_MANIFOLD_FILL_RULE_NON_ZERO => FillRule::NonZero,
@@ -19,7 +22,7 @@ impl From<u32> for FillRule {
     }
 }
 
-impl From<FillRule> for u32 {
+impl From<FillRule> for RawFillRule {
     fn from(value: FillRule) -> Self {
         match value {
             FillRule::EvenOdd => manifold3d_sys::ManifoldFillRule_MANIFOLD_FILL_RULE_EVEN_ODD,

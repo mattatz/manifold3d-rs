@@ -1,6 +1,8 @@
 use crate::manifold::Manifold;
 use manifold3d_sys::{manifold_status, ManifoldError};
 
+type RawError = ManifoldError;
+
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
@@ -16,7 +18,7 @@ pub enum Error {
     RunIndexWrongLength,
     FaceIdWrongLength,
     InvalidConstruction,
-    Unknown(u32),
+    Unknown(RawError),
 }
 
 impl From<ManifoldError> for Error {
