@@ -2,21 +2,7 @@ use crate::bounding_box::BoundingBox;
 use crate::error::{check_error, Error};
 use crate::mesh_gl::MeshGL;
 use manifold3d_sys::{
-    manifold_alloc_box, manifold_alloc_manifold, manifold_alloc_manifold_vec,
-    manifold_alloc_meshgl, manifold_as_original, manifold_batch_boolean, manifold_batch_hull,
-    manifold_boolean, manifold_bounding_box, manifold_calculate_curvature,
-    manifold_calculate_normals, manifold_copy, manifold_cube, manifold_cylinder,
-    manifold_decompose, manifold_delete_manifold, manifold_difference, manifold_empty,
-    manifold_epsilon, manifold_genus, manifold_get_circular_segments, manifold_get_meshgl,
-    manifold_hull, manifold_hull_pts, manifold_intersection, manifold_is_empty,
-    manifold_manifold_vec, manifold_manifold_vec_set, manifold_min_gap, manifold_mirror,
-    manifold_num_edge, manifold_num_prop, manifold_num_tri, manifold_num_vert, manifold_of_meshgl,
-    manifold_original_id, manifold_project, manifold_refine, manifold_refine_to_length,
-    manifold_refine_to_tolerance, manifold_scale, manifold_set_properties, manifold_slice,
-    manifold_smooth_by_normals, manifold_smooth_out, manifold_sphere, manifold_split,
-    manifold_split_by_plane, manifold_status, manifold_surface_area, manifold_tetrahedron,
-    manifold_transform, manifold_translate, manifold_trim_by_plane, manifold_union,
-    manifold_volume, manifold_warp, ManifoldManifold, ManifoldOpType, ManifoldVec3,
+    manifold_alloc_box, manifold_alloc_manifold, manifold_alloc_manifold_vec, manifold_alloc_meshgl, manifold_as_original, manifold_batch_boolean, manifold_batch_hull, manifold_boolean, manifold_bounding_box, manifold_calculate_curvature, manifold_calculate_normals, manifold_copy, manifold_cube, manifold_cylinder, manifold_decompose, manifold_delete_manifold, manifold_difference, manifold_empty, manifold_epsilon, manifold_genus, manifold_get_circular_segments, manifold_get_meshgl, manifold_hull, manifold_hull_pts, manifold_intersection, manifold_is_empty, manifold_manifold_vec, manifold_manifold_vec_set, manifold_min_gap, manifold_mirror, manifold_num_edge, manifold_num_prop, manifold_num_tri, manifold_num_vert, manifold_of_meshgl, manifold_original_id, manifold_project, manifold_refine, manifold_refine_to_length, manifold_refine_to_tolerance, manifold_rotate, manifold_scale, manifold_set_properties, manifold_slice, manifold_smooth_by_normals, manifold_smooth_out, manifold_sphere, manifold_split, manifold_split_by_plane, manifold_status, manifold_surface_area, manifold_tetrahedron, manifold_transform, manifold_translate, manifold_trim_by_plane, manifold_union, manifold_volume, manifold_warp, ManifoldManifold, ManifoldOpType, ManifoldVec3
 };
 use std::mem::transmute;
 use std::os::raw::{c_int, c_void};
@@ -1143,7 +1129,7 @@ impl Manifold {
     pub fn rotate(&self, rotation: impl Into<Rotation>) -> Manifold {
         let rotation = rotation.into();
         let manifold_ptr = unsafe {
-            manifold_translate(
+            manifold_rotate(
                 manifold_alloc_manifold() as *mut c_void,
                 self.0,
                 rotation.x.get(),
