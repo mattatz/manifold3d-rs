@@ -17,7 +17,7 @@ crate-type = ["lib"]
 
 [dependencies]
 manifold3d-macros = { path = "crates/macros", version = "0.0.3" }
-manifold3d-sys = { git = "https://github.com/mattatz/manifold3d-sys-rs.git", branch = "develop" }
+manifold3d-sys = { git = "https://github.com/mattatz/manifold3d-sys-rs.git", branch = "windows" }
 thiserror = "2.0.3"
 num-traits = "0.2.19"
 nalgebra = { version = "0.33.2", optional = true }
