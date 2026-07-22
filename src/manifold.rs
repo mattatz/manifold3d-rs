@@ -1,8 +1,8 @@
 use crate::bounding_box::BoundingBox;
 use crate::error::{check_error, Error};
-use crate::mesh_gl::MeshGL;
+use crate::mesh_gl::{MeshGL, MeshGL64};
 use manifold3d_sys::{
-    manifold_alloc_box, manifold_alloc_manifold, manifold_alloc_manifold_vec, manifold_alloc_meshgl, manifold_as_original, manifold_batch_boolean, manifold_batch_hull, manifold_boolean, manifold_bounding_box, manifold_calculate_curvature, manifold_calculate_normals, manifold_copy, manifold_cube, manifold_cylinder, manifold_decompose, manifold_delete_manifold, manifold_difference, manifold_empty, manifold_epsilon, manifold_genus, manifold_get_circular_segments, manifold_get_meshgl, manifold_hull, manifold_hull_pts, manifold_intersection, manifold_is_empty, manifold_manifold_vec, manifold_manifold_vec_set, manifold_min_gap, manifold_mirror, manifold_num_edge, manifold_num_prop, manifold_num_tri, manifold_num_vert, manifold_of_meshgl, manifold_original_id, manifold_project, manifold_refine, manifold_refine_to_length, manifold_refine_to_tolerance, manifold_rotate, manifold_scale, manifold_set_properties, manifold_slice, manifold_smooth_by_normals, manifold_smooth_out, manifold_sphere, manifold_split, manifold_split_by_plane, manifold_status, manifold_surface_area, manifold_tetrahedron, manifold_transform, manifold_translate, manifold_trim_by_plane, manifold_union, manifold_volume, manifold_warp, ManifoldManifold, ManifoldOpType, ManifoldVec3
+    manifold_alloc_box, manifold_alloc_manifold, manifold_alloc_manifold_vec, manifold_alloc_meshgl, manifold_as_original, manifold_batch_boolean, manifold_batch_hull, manifold_boolean, manifold_bounding_box, manifold_calculate_curvature, manifold_calculate_normals, manifold_copy, manifold_cube, manifold_cylinder, manifold_decompose, manifold_delete_manifold, manifold_difference, manifold_empty, manifold_epsilon, manifold_genus, manifold_get_circular_segments, manifold_get_meshgl, manifold_hull, manifold_hull_pts, manifold_intersection, manifold_is_empty, manifold_manifold_vec, manifold_manifold_vec_set, manifold_min_gap, manifold_mirror, manifold_num_edge, manifold_num_prop, manifold_num_tri, manifold_num_vert, manifold_of_meshgl, manifold_of_meshgl64, manifold_original_id, manifold_project, manifold_refine, manifold_refine_to_length, manifold_refine_to_tolerance, manifold_rotate, manifold_scale, manifold_set_properties, manifold_slice, manifold_smooth_by_normals, manifold_smooth_out, manifold_sphere, manifold_split, manifold_split_by_plane, manifold_status, manifold_surface_area, manifold_tetrahedron, manifold_transform, manifold_translate, manifold_trim_by_plane, manifold_union, manifold_volume, manifold_warp, ManifoldManifold, ManifoldOpType, ManifoldVec3
 };
 use std::mem::transmute;
 use std::os::raw::{c_int, c_void};
@@ -387,6 +387,24 @@ impl Manifold {
     /// provided [`MeshGL`]. In case of failure, an [`Error`] is returned encapsulating the reason for
     /// failure.
     pub fn from_mesh_gl(mesh_gl: &MeshGL) -> Result<Manifold, Error> {
+        Manifold::try_from(mesh_gl)
+    }
+
+    /// Constructs a manifold object from a double precision [`MeshGL64`] representation.
+    ///
+    /// This is the f64 counterpart of [`Manifold::from_mesh_gl`]; it preserves full
+    /// double precision at the mesh boundary instead of rounding vertices to f32.
+    ///
+    /// # Arguments
+    ///
+    /// * `mesh_gl`: A reference to a [`MeshGL64`] object, which represents the mesh geometry.
+    ///
+    /// # Returns
+    ///
+    /// A new manifold object representing the 3D manifold created from the provided
+    /// [`MeshGL64`]. In case of failure, an [`Error`] is returned encapsulating the reason for
+    /// failure.
+    pub fn from_mesh_gl64(mesh_gl: &MeshGL64) -> Result<Manifold, Error> {
         Manifold::try_from(mesh_gl)
     }
 
@@ -2105,6 +2123,16 @@ impl TryFrom<&'_ MeshGL> for Manifold {
     fn try_from(value: &'_ MeshGL) -> Result<Self, Self::Error> {
         let manifold_ptr =
             unsafe { manifold_of_meshgl(manifold_alloc_manifold() as *mut c_void, value.ptr()) };
+        check_error(Manifold::from_ptr(manifold_ptr))
+    }
+}
+
+impl TryFrom<&'_ MeshGL64> for Manifold {
+    type Error = Error;
+
+    fn try_from(value: &'_ MeshGL64) -> Result<Self, Self::Error> {
+        let manifold_ptr =
+            unsafe { manifold_of_meshgl64(manifold_alloc_manifold() as *mut c_void, value.ptr()) };
         check_error(Manifold::from_ptr(manifold_ptr))
     }
 }

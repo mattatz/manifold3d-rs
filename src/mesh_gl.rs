@@ -1,13 +1,15 @@
 use crate::manifold::Manifold;
 use crate::{check_error, Error, HalfEdgeIndex};
 use manifold3d_sys::{
-    manifold_alloc_manifold, manifold_alloc_meshgl, manifold_delete_meshgl, manifold_meshgl_copy,
-    manifold_meshgl_face_id_length, manifold_meshgl_merge, manifold_meshgl_merge_length,
-    manifold_meshgl_num_prop, manifold_meshgl_num_tri, manifold_meshgl_num_vert,
-    manifold_meshgl_run_index_length, manifold_meshgl_run_original_id_length,
-    manifold_meshgl_run_transform_length, manifold_meshgl_tangent_length,
-    manifold_meshgl_tri_length, manifold_meshgl_tri_verts, manifold_meshgl_vert_properties,
-    manifold_meshgl_vert_properties_length, manifold_smooth, ManifoldMeshGL,
+    manifold_alloc_manifold, manifold_alloc_meshgl, manifold_alloc_meshgl64, manifold_delete_meshgl,
+    manifold_delete_meshgl64, manifold_meshgl64, manifold_meshgl64_copy,
+    manifold_meshgl_copy, manifold_meshgl_face_id_length, manifold_meshgl_merge,
+    manifold_meshgl_merge_length, manifold_meshgl_num_prop, manifold_meshgl_num_tri,
+    manifold_meshgl_num_vert, manifold_meshgl_run_index_length,
+    manifold_meshgl_run_original_id_length, manifold_meshgl_run_transform_length,
+    manifold_meshgl_tangent_length, manifold_meshgl_tri_length, manifold_meshgl_tri_verts,
+    manifold_meshgl_vert_properties, manifold_meshgl_vert_properties_length, manifold_smooth,
+    ManifoldMeshGL, ManifoldMeshGL64,
 };
 use std::alloc::{alloc, Layout};
 use std::os::raw::c_void;
@@ -189,5 +191,77 @@ impl Clone for MeshGL {
 impl Drop for MeshGL {
     fn drop(&mut self) {
         unsafe { manifold_delete_meshgl(self.0) }
+    }
+}
+
+/// Double precision (f64) counterpart of [`MeshGL`].
+///
+/// Manifold performs all of its computation in double precision internally;
+/// [`MeshGL`] is the single precision (f32) I/O representation, while `MeshGL64`
+/// keeps full f64 precision at the mesh boundary. Construct one from raw vertex
+/// properties and triangle indices via [`MeshGL64::new`], then convert it into a
+/// [`Manifold`] with [`Manifold::from_mesh_gl64`].
+pub struct MeshGL64(*mut ManifoldMeshGL64);
+
+impl MeshGL64 {
+    pub fn from_ptr(ptr: *mut ManifoldMeshGL64) -> MeshGL64 {
+        MeshGL64(ptr)
+    }
+
+    pub(crate) fn ptr(&self) -> *mut ManifoldMeshGL64 {
+        self.0
+    }
+
+    /// Builds a `MeshGL64` from a flat, GL-style interleaved list of vertex
+    /// properties and a flat list of triangle vertex indices.
+    ///
+    /// # Arguments
+    ///
+    /// * `vertex_properties` - interleaved per-vertex properties (at minimum the
+    ///   x, y, z position of each vertex). Its length must be a multiple of
+    ///   `properties_per_vertex`.
+    /// * `properties_per_vertex` - number of properties per vertex (3 when only
+    ///   positions are provided).
+    /// * `triangle_indices` - flat list of vertex indices, three per triangle.
+    pub fn new(
+        vertex_properties: &[f64],
+        properties_per_vertex: usize,
+        triangle_indices: &[u32],
+    ) -> MeshGL64 {
+        let vertex_count = if properties_per_vertex == 0 {
+            0
+        } else {
+            vertex_properties.len() / properties_per_vertex
+        };
+        let triangle_count = triangle_indices.len() / 3;
+
+        // manifold_meshgl64 expects 64-bit triangle indices.
+        let tri_verts: Vec<u64> = triangle_indices.iter().map(|&i| i as u64).collect();
+
+        let ptr = unsafe {
+            manifold_meshgl64(
+                manifold_alloc_meshgl64() as *mut c_void,
+                vertex_properties.as_ptr() as *mut f64,
+                vertex_count,
+                properties_per_vertex,
+                tri_verts.as_ptr() as *mut u64,
+                triangle_count,
+            )
+        };
+        MeshGL64(ptr)
+    }
+}
+
+impl Clone for MeshGL64 {
+    fn clone(&self) -> Self {
+        let mesh_gl_ptr =
+            unsafe { manifold_meshgl64_copy(manifold_alloc_meshgl64() as *mut c_void, self.0) };
+        MeshGL64(mesh_gl_ptr)
+    }
+}
+
+impl Drop for MeshGL64 {
+    fn drop(&mut self) {
+        unsafe { manifold_delete_meshgl64(self.0) }
     }
 }
