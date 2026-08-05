@@ -1,11 +1,13 @@
 use crate::manifold::Manifold;
 use crate::{check_error, Error, HalfEdgeIndex};
 use manifold3d_sys::{
-    manifold_alloc_manifold, manifold_alloc_meshgl, manifold_alloc_meshgl64, manifold_delete_meshgl,
-    manifold_delete_meshgl64, manifold_meshgl64, manifold_meshgl64_copy,
-    manifold_meshgl_copy, manifold_meshgl_face_id_length, manifold_meshgl_merge,
-    manifold_meshgl_merge_length, manifold_meshgl_num_prop, manifold_meshgl_num_tri,
-    manifold_meshgl_num_vert, manifold_meshgl_run_index_length,
+    manifold_alloc_manifold, manifold_alloc_meshgl, manifold_alloc_meshgl64,
+    manifold_delete_meshgl, manifold_delete_meshgl64, manifold_meshgl64, manifold_meshgl64_copy,
+    manifold_meshgl64_num_prop, manifold_meshgl64_num_tri, manifold_meshgl64_num_vert,
+    manifold_meshgl64_tri_length, manifold_meshgl64_tri_verts, manifold_meshgl64_vert_properties,
+    manifold_meshgl64_vert_properties_length, manifold_meshgl_copy, manifold_meshgl_face_id_length,
+    manifold_meshgl_merge, manifold_meshgl_merge_length, manifold_meshgl_num_prop,
+    manifold_meshgl_num_tri, manifold_meshgl_num_vert, manifold_meshgl_run_index_length,
     manifold_meshgl_run_original_id_length, manifold_meshgl_run_transform_length,
     manifold_meshgl_tangent_length, manifold_meshgl_tri_length, manifold_meshgl_tri_verts,
     manifold_meshgl_vert_properties, manifold_meshgl_vert_properties_length, manifold_smooth,
@@ -249,6 +251,47 @@ impl MeshGL64 {
             )
         };
         MeshGL64(ptr)
+    }
+
+    pub fn properties_per_vertex_count(&self) -> usize {
+        unsafe { manifold_meshgl64_num_prop(self.0) }
+    }
+
+    pub fn vertex_count(&self) -> usize {
+        unsafe { manifold_meshgl64_num_vert(self.0) }
+    }
+
+    pub fn triangle_count(&self) -> usize {
+        unsafe { manifold_meshgl64_num_tri(self.0) }
+    }
+
+    /// Returns the length of the flat GL-style interleaved list of all vertex properties.
+    pub fn vertex_property_count(&self) -> usize {
+        unsafe { manifold_meshgl64_vert_properties_length(self.0) }
+    }
+
+    pub fn vertex_index_count(&self) -> usize {
+        unsafe { manifold_meshgl64_tri_length(self.0) }
+    }
+
+    /// Returns a copy of the original data in full f64 precision.
+    pub fn vertex_properties(&self) -> Vec<f64> {
+        let element_count = self.vertex_property_count();
+        let layout = Layout::array::<f64>(element_count).unwrap();
+        let array_start_ptr = unsafe { alloc(layout) } as *mut f64;
+        unsafe { manifold_meshgl64_vert_properties(array_start_ptr as *mut c_void, self.0) };
+
+        unsafe { Vec::from_raw_parts(array_start_ptr, element_count, element_count) }
+    }
+
+    /// Returns a copy of the original triangle vertex indices.
+    pub fn tri_verts(&self) -> Vec<u64> {
+        let element_count = self.vertex_index_count();
+        let layout = Layout::array::<u64>(element_count).unwrap();
+        let array_start_ptr = unsafe { alloc(layout) } as *mut u64;
+        unsafe { manifold_meshgl64_tri_verts(array_start_ptr as *mut c_void, self.0) };
+
+        unsafe { Vec::from_raw_parts(array_start_ptr, element_count, element_count) }
     }
 }
 

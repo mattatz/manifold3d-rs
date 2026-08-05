@@ -190,3 +190,32 @@ fn test_replace_vertex_properties() {
     let new_manifold = manifold.replace_vertex_properties(Pin::new(&replacer));
     println!("{}", new_manifold.properties_per_vertex_count());
 }
+
+#[test]
+fn test_as_mesh64_preserves_f64_precision() {
+    // 0.1 is not exactly representable in f32, so an f32 round trip would lose precision.
+    let offset = 0.1_f64;
+    let manifold = Manifold::new_cuboid(
+        PositiveF64::new(1.0).unwrap(),
+        PositiveF64::new(1.0).unwrap(),
+        PositiveF64::new(1.0).unwrap(),
+        true,
+    )
+    .translate(types::Vec3::new(offset, 0.0, 0.0));
+
+    let mesh = manifold.as_mesh64();
+    let props = mesh.vertex_properties();
+    let num_prop = mesh.properties_per_vertex_count();
+    assert!(num_prop >= 3);
+    assert_eq!(props.len(), mesh.vertex_property_count());
+    assert_eq!(mesh.tri_verts().len(), mesh.vertex_index_count());
+
+    let expected_max_x = 0.5 + offset;
+    let max_x = props
+        .chunks(num_prop)
+        .map(|v| v[0])
+        .fold(f64::NEG_INFINITY, f64::max);
+    assert!((max_x - expected_max_x).abs() < 1e-12);
+    // The extracted coordinate keeps precision beyond f32: rounding through f32 changes it.
+    assert_ne!(max_x, (max_x as f32) as f64);
+}
